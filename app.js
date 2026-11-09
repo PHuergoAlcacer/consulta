@@ -169,7 +169,15 @@ async function abrir(fromFile) {
     msg({ PASS: 'Contraseña incorrecta.', NET: 'No se pudo descargar el archivo. Revisá la conexión o avisá al administrador.', PLAIN: 'El archivo no está cifrado. Avisá al administrador.' }[e.message] || 'No se pudo leer el archivo.');
   } finally { go.disabled = false; }
 }
-$('f').addEventListener('submit', e => { e.preventDefault(); abrir(); });
+const eye = $('eye'), ver = x => { $('pw').type = x ? 'text' : 'password'; };
+eye.addEventListener('pointerdown', e => { e.preventDefault(); eye.setPointerCapture(e.pointerId); ver(true); });
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => eye.addEventListener(t, () => ver(false)));
+eye.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); ver(true); } });
+eye.addEventListener('keyup', () => ver(false));
+eye.addEventListener('contextmenu', e => e.preventDefault());
+eye.addEventListener('blur', () => ver(false));
+addEventListener('pagehide', () => ver(false));
+$('f').addEventListener('submit', e => { e.preventDefault(); ver(false); abrir(); });
 $('file').addEventListener('change', e => { if (e.target.files[0]) abrir(e.target.files[0]); });
 $('q').addEventListener('input', () => data && render());
 $('close').onclick = () => lock();

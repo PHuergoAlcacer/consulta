@@ -24,6 +24,10 @@ form{display:flex;gap:8px}
 #msg{color:var(--er);min-height:1.4em;margin:8px 0}
 details{color:var(--mu);margin-top:16px}
 details input{margin-top:8px}
+.pw{position:relative;flex:1}
+.pw input{padding-right:48px}
+#eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);padding:6px 8px;border:0;background:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#eye svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #view{display:none}
 .top{display:flex;gap:8px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:2}
 .info{color:var(--mu);font-size:.85rem;margin:4px 0 8px}
@@ -42,7 +46,10 @@ details input{margin-top:8px}
   <section id="login">
     <h1>Estudio Nexo - ARCA Clave Fiscal</h1>
     <form id="f" autocomplete="off">
-      <input id="pw" type="password" placeholder="Contraseña" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <div class="pw">
+        <input id="pw" type="password" placeholder="Contraseña" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <button type="button" id="eye" aria-label="Mantener presionado para ver la contraseña"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
       <button class="p" type="submit" id="go">Abrir</button>
     </form>
     <p id="msg" role="alert"></p>
