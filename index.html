@@ -28,15 +28,22 @@ details input{margin-top:8px}
 .pw input{padding-right:48px}
 #eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);padding:6px 8px;border:0;background:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 #eye svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.arca{display:block;margin:4px 0 0 auto;padding:4px 12px;font-size:.78rem;border-radius:8px}
+#bar{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);padding:10px 16px calc(10px + env(safe-area-inset-bottom));gap:8px;flex-wrap:wrap;z-index:3}
+#bar .who{flex:1 0 100%;font-size:.85rem;color:var(--mu)}
+#bar button{flex:1}
+#bar .x{flex:0 0 auto}
+body.bar main{padding-bottom:130px}
+body.bar #toast{bottom:calc(120px + env(safe-area-inset-bottom))}
 #view{display:none}
 .top{display:flex;gap:8px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:2}
 .info{color:var(--mu);font-size:.85rem;margin:4px 0 8px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
-.card h2{font-size:1rem;margin:0 0 8px}
-.r{display:flex;align-items:center;gap:8px;padding:4px 0}
-.r span{color:var(--mu);font-size:.8rem;width:84px;flex:none}
-.r b{flex:1;font-weight:500;font-variant-numeric:tabular-nums;word-break:break-all}
-.r button{padding:6px 10px;font-size:.85rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+.card h2{font-size:.95rem;margin:0 0 2px}
+.r{display:flex;align-items:center;gap:6px;padding:2px 0}
+.r span{color:var(--mu);font-size:.72rem;width:74px;flex:none}
+.r b{flex:1;font-size:.88rem;font-weight:500;font-variant-numeric:tabular-nums;word-break:break-all}
+.r button{padding:3px 9px;font-size:.78rem;border-radius:8px}
 #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:20px;opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.on{opacity:1}
 </style>
@@ -44,7 +51,7 @@ details input{margin-top:8px}
 <body>
 <main>
   <section id="login">
-    <h1>Estudio Nexo - ARCA Clave Fiscal</h1>
+    <h1>Consulta de claves</h1>
     <form id="f" autocomplete="off">
       <div class="pw">
         <input id="pw" type="password" placeholder="Contraseña" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
@@ -67,6 +74,7 @@ details input{margin-top:8px}
     <div id="list"></div>
   </section>
 </main>
+<div id="bar"></div>
 <div id="toast"></div>
 <script src="app.js"></script>
 </body>

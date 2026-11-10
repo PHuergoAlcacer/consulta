@@ -107,7 +107,7 @@ function build(rows) {
 }
 
 /* ---------- Pantalla ---------- */
-let data = null, idle = 0, hiddenAt = 0;
+let data = null, picked = null, idle = 0, hiddenAt = 0, f1 = '', arca = null, active = null, grace = false;
 const fmt = s => /^\d{11}$/.test(s) ? `${s.slice(0, 2)}-${s.slice(2, 10)}-${s.slice(10)}` : s;
 const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 const msg = x => { $('msg').textContent = x || ''; };
@@ -115,6 +115,25 @@ function toast(x) { const t = $('toast'); t.textContent = x; t.classList.add('on
 async function copy(x) {
   try { await navigator.clipboard.writeText(x); } catch { const a = el('textarea'); a.value = x; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); }
   toast('Copiado');
+}
+const safeUrl = x => { try { let s = String(x || '').trim().replace(/^["'<]+|["'>]+$/g, ''); if (!s) return null; s = s.replace(/^http:\/\//i, 'https://'); if (!/^https:\/\//i.test(s)) s = 'https://' + s; const u = new URL(s); return u.hostname.includes('.') ? u.href : null; } catch { return null; } };
+function copySync(x) { // síncrono: tiene que correr dentro del toque, antes de abrir ARCA
+  const a = el('textarea'); a.value = x; a.readOnly = true; a.style.cssText = 'position:fixed;top:0;opacity:0;font-size:16px';
+  document.body.appendChild(a); a.focus({ preventScroll: true }); a.select(); a.setSelectionRange(0, x.length);
+  let ok = false; try { ok = document.execCommand('copy'); } catch {} a.remove(); return ok;
+}
+function ingresar(r) {
+  if (!r.b) return toast('Falta el CUIT DDJJ');
+  const ir = () => window.open(arca, '_blank', 'noopener,noreferrer');
+  if (copySync(r.b)) { toast('CUIT DDJJ copiado'); ir(); }
+  else if (navigator.clipboard) navigator.clipboard.writeText(r.b).then(() => { toast('CUIT DDJJ copiado'); ir(); }, () => { toast('No se pudo copiar el CUIT'); ir(); });
+  else { toast('No se pudo copiar el CUIT'); ir(); }
+  active = r; grace = true; bump();
+  const b = $('bar'), k = el('button', 'p', 'Copiar clave'), c = el('button', '', 'Copiar CUIT DDJJ'), x = el('button', 'x', '✕');
+  k.onclick = () => { copy(r.k); setTimeout(() => navigator.clipboard.writeText(' ').catch(() => {}), 60000); };
+  c.onclick = () => copy(r.b);
+  x.onclick = () => { active = null; grace = false; b.style.display = 'none'; document.body.classList.remove('bar'); };
+  b.replaceChildren(el('div', 'who', 'ARCA · ' + r.n), c, k, x); b.style.display = 'flex'; document.body.classList.add('bar');
 }
 function line(label, val, secret) {
   const r = el('div', 'r'), v = el('b', '', secret ? '••••••••' : fmt(val)), cp = el('button', '', 'Copiar');
@@ -129,16 +148,18 @@ function line(label, val, secret) {
 function render() {
   const q = norm($('q').value), qd = q.replace(/\D/g, ''), L = $('list'); L.replaceChildren();
   const rows = data.filter(r => !q || norm(r.n).includes(q) || (qd && (r.a.includes(qd) || r.b.includes(qd)))), shown = rows.slice(0, 100);
-  for (const r of shown) { const c = el('div', 'card'); c.append(el('h2', '', r.n), line('CUIT Contrib.', r.a), line('CUIT DDJJ', r.b), line('Clave', r.k, true)); L.append(c); }
-  $('info').textContent = `${rows.length} de ${data.length}` + (rows.length > 100 ? ' · mostrando 100, afiná la búsqueda' : '') + ($('info').dataset.mod || '');
+  for (const r of shown) { const c = el('div', 'card'); c.append(el('h2', '', r.n), line('CUIT Contrib.', r.a), line('CUIT DDJJ', r.b), line('Clave', r.k, true));
+    if (arca) { const g = el('button', 'p arca', 'Ingresar a ARCA'); g.onclick = () => ingresar(r); c.append(g); }
+    L.append(c); }
+  $('info').textContent = `${rows.length} de ${data.length}` + (rows.length > 100 ? ' · mostrando 100, afiná la búsqueda' : '') + ($('info').dataset.mod || '') + (arca ? '' : f1 ? ' · F1 no tiene una URL válida: «' + f1.slice(0, 40) + '»' : ' · falta la URL de ARCA en la celda F1');
 }
 function lock(m) {
-  data = null; clearTimeout(idle); $('list').replaceChildren(); $('q').value = ''; $('pw').value = ''; $('file').value = '';
+  data = null; picked = null; arca = null; active = null; grace = false; $('bar').style.display = 'none'; document.body.classList.remove('bar'); clearTimeout(idle); $('list').replaceChildren(); $('q').value = ''; $('pw').value = ''; $('file').value = '';
   $('view').style.display = 'none'; $('login').style.display = ''; msg(m || '');
 }
-function bump() { clearTimeout(idle); if (data) idle = setTimeout(() => lock('Sesión cerrada por inactividad.'), 120000); }
+function bump() { clearTimeout(idle); if (data) idle = setTimeout(() => lock('Sesión cerrada por inactividad.'), grace ? 240000 : 120000); }
 ['pointerdown', 'keydown', 'input', 'scroll'].forEach(e => addEventListener(e, bump, { passive: true }));
-document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else if (data && Date.now() - hiddenAt > 60000) lock('Sesión cerrada.'); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else if (data && Date.now() - hiddenAt > (grace ? 240000 : 60000)) lock('Sesión cerrada.'); });
 
 function dropboxUrl() {
   try {
@@ -152,16 +173,16 @@ async function abrir(fromFile) {
   const go = $('go'); go.disabled = true; msg('Abriendo… puede tardar unos segundos.');
   try {
     let buf, mod = '';
-    if (fromFile) buf = await fromFile.arrayBuffer();
+    if (picked) buf = await picked.arrayBuffer();
     else {
-      const url = dropboxUrl(); if (!url) { msg('Esta dirección no tiene el link de Dropbox. Pedí la dirección completa.'); return; }
+      const url = dropboxUrl(); if (!url) { msg('No hay un archivo elegido ni un link de Dropbox. Elegí un archivo en «Abrir un archivo descargado» o usá la dirección completa.'); return; }
       let res; try { res = await fetch(url, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' }); } catch { throw new Error('NET'); }
       if (!res.ok) throw new Error('NET');
       buf = await res.arrayBuffer(); const lm = res.headers.get('last-modified'); if (lm) mod = ' · archivo del ' + new Date(lm).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
     }
     const raw = new Uint8Array(buf);
     if (raw[0] !== 0xD0) throw new Error('PLAIN');
-    data = build(sheet(await unzip(await decrypt(raw, pw))));
+    const rows = sheet(await unzip(await decrypt(raw, pw))); data = build(rows); f1 = String((rows[0] && rows[0][5]) || ''); arca = safeUrl(f1);
     $('info').dataset.mod = mod; $('pw').value = '';
     $('login').style.display = 'none'; $('view').style.display = 'block'; msg(''); render(); bump();
   } catch (e) {
@@ -178,7 +199,11 @@ eye.addEventListener('contextmenu', e => e.preventDefault());
 eye.addEventListener('blur', () => ver(false));
 addEventListener('pagehide', () => ver(false));
 $('f').addEventListener('submit', e => { e.preventDefault(); ver(false); abrir(); });
-$('file').addEventListener('change', e => { if (e.target.files[0]) abrir(e.target.files[0]); });
+$('file').addEventListener('change', e => {
+  picked = e.target.files[0] || null; if (!picked) return;
+  if ($('pw').value) abrir(); else { msg('Archivo elegido: ' + picked.name + '. Escribí la contraseña y tocá Abrir.'); $('pw').focus(); }
+});
+if (!dropboxUrl()) document.querySelector('details').open = true;
 $('q').addEventListener('input', () => data && render());
 $('close').onclick = () => lock();
 })();
